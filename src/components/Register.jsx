@@ -8,6 +8,7 @@ function Register() {
   const [isMobile, setIsMobile] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [combinedImage, setCombinedImage] = useState(null);
+  const [showSourceOptions, setShowSourceOptions] = useState(false);
 
   const MSF_LOGO_URL = "https://media-hosting.imagekit.io/6c5eba5d0cd94d13/5948e25f-7f67-4eb5-8889-ccff3e0211a7-Photoroom%20(1).png?Expires=1841751769&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=tD6yF3S6g1zwHAM3L9rzGtN0T9QOuVqMSneQoJd1KxxRpIXvmEzhtfbkwRBpNhO125SPhr2x6BBaD7-~RlH8n3O7t2je79Zu8B7fT5IrcJyolE3fbLruNbWNQ5ZM0By1WsBqnCb7uuhHRBcoukWSKbkNV60PXGjxtIvqztXNwDNTTmLh2ylHrLsG3t1fj9cra9psXbcrH4nHq0qCjrQWlUtBDYHOh8l11Z4yKLo3q6PpnbefneEjVyUocJuu7Gjbodi7YGmUN6pQSh6LL2R2mLkT9hw9uQuDqn9ysih37sMTH5q6yfH96CcDlZSnO4Mbv48DHrB2yEGlcqG51rd37w__";
 
@@ -60,6 +61,20 @@ function Register() {
         };
       };
     });
+  };
+
+  const handleImageSelection = (sourceType) => {
+    setShowSourceOptions(false);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    if (sourceType === 'camera') {
+      input.capture = 'environment'; // This will open camera
+    }
+    
+    input.onchange = (e) => handleImage(e);
+    input.click();
   };
 
   const handleImage = async (e) => {
@@ -157,7 +172,10 @@ function Register() {
 
         <div>
           <label className="block text-sm text-gray-700 mb-1">Upload Photo</label>
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer">
+          <label 
+            onClick={() => setShowSourceOptions(true)}
+            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer"
+          >
             {formData.image ? (
               <>
                 <img src={formData.image} alt="Preview" className="h-20 w-20 object-cover rounded-md mb-2" />
@@ -169,21 +187,44 @@ function Register() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.9A5 5 0 1116 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="text-sm text-gray-500 text-center">
-                  <span className="font-semibold">Click to upload</span> or drag & drop
+                  <span className="font-semibold">Click to upload</span>
                 </p>
                 <p className="text-xs text-gray-400">PNG, JPG (Max: 5MB)</p>
               </>
             )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImage}
-              className="hidden"
-              capture="environment"
-              required
-            />
           </label>
         </div>
+
+        {showSourceOptions && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-64">
+              <h3 className="text-lg font-semibold mb-4">Select Image Source</h3>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => handleImageSelection('camera')}
+                  className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Take Photo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleImageSelection('gallery')}
+                  className="w-full py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Choose from Gallery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSourceOptions(false)}
+                  className="w-full py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <button
           type="button"
