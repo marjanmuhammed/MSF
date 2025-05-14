@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -9,6 +9,7 @@ function Register() {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [combinedImage, setCombinedImage] = useState(null);
   const [showSourceOptions, setShowSourceOptions] = useState(false);
+  const fileInputRef = useRef(null);
 
   const MSF_LOGO_URL = "https://media-hosting.imagekit.io/6c5eba5d0cd94d13/5948e25f-7f67-4eb5-8889-ccff3e0211a7-Photoroom%20(1).png?Expires=1841751769&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=tD6yF3S6g1zwHAM3L9rzGtN0T9QOuVqMSneQoJd1KxxRpIXvmEzhtfbkwRBpNhO125SPhr2x6BBaD7-~RlH8n3O7t2je79Zu8B7fT5IrcJyolE3fbLruNbWNQ5ZM0By1WsBqnCb7uuhHRBcoukWSKbkNV60PXGjxtIvqztXNwDNTTmLh2ylHrLsG3t1fj9cra9psXbcrH4nHq0qCjrQWlUtBDYHOh8l11Z4yKLo3q6PpnbefneEjVyUocJuu7Gjbodi7YGmUN6pQSh6LL2R2mLkT9hw9uQuDqn9ysih37sMTH5q6yfH96CcDlZSnO4Mbv48DHrB2yEGlcqG51rd37w__";
 
@@ -65,9 +66,16 @@ function Register() {
 
   const handleImageSelection = (sourceType) => {
     setShowSourceOptions(false);
+    
+    // Clear previous file input if any
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
+    input.ref = fileInputRef;
     
     if (sourceType === 'camera') {
       input.capture = 'environment'; // This will open camera
@@ -104,10 +112,12 @@ function Register() {
         setCombinedImage(combined);
       } catch (error) {
         console.error("Error combining images:", error);
+        toast.error("Error processing image");
         setCombinedImage(imageData);
       }
 
       setIsUploading(false);
+      toast.success("Image uploaded successfully");
     };
     reader.onerror = () => {
       setIsUploading(false);
@@ -130,15 +140,22 @@ function Register() {
     const imageToDownload = combinedImage || uploadedImage;
     const link = document.createElement('a');
     link.href = imageToDownload;
-    link.download = `msf_${formData.name || 'user'}_${Date.now()}.jpg`;
+    link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
+    
+    // This is needed for Firefox
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(link.href);
+    }, 100);
   };
 
   return (
     <div className={`w-full max-w-md mx-auto ${isMobile ? 'p-3' : 'p-6'} bg-white rounded-lg shadow-lg mt-6 border border-gray-300`}>
-      <ToastContainer position="top-center" />
+      <ToastContainer position="top-center" autoClose={3000} />
 
       <div className="text-center mb-6">
         <h1 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-green-800`}>MSF MAYYIL PANCHAYATH</h1>
@@ -154,6 +171,7 @@ function Register() {
               className={`${isMobile ? 'h-32 w-32' : 'h-48 w-48'} object-cover rounded-full border-4 border-green-500`} 
             />
           </div>
+          <p className="text-sm text-green-600 mt-2">Image selected ✓</p>
         </div>
       )}
 
@@ -179,7 +197,7 @@ function Register() {
             {formData.image ? (
               <>
                 <img src={formData.image} alt="Preview" className="h-20 w-20 object-cover rounded-md mb-2" />
-                <p className="text-xs text-green-600">Image Selected</p>
+                <p className="text-xs text-green-600">Click to change image</p>
               </>
             ) : (
               <>
@@ -230,7 +248,11 @@ function Register() {
           type="button"
           onClick={handleDownload}
           disabled={isUploading || !uploadedImage || !formData.name.trim()}
-          className={`w-full py-3 rounded-lg text-white font-medium ${(isUploading || !uploadedImage || !formData.name.trim()) ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'} transition-colors`}
+          className={`w-full py-3 rounded-lg text-white font-medium ${
+            (isUploading || !uploadedImage || !formData.name.trim()) 
+              ? 'bg-blue-400 cursor-not-allowed' 
+              : 'bg-blue-600 hover:bg-blue-700'
+          } transition-colors`}
         >
           {isUploading ? "Processing..." : "Download Image"}
         </button>
@@ -239,4 +261,4 @@ function Register() {
   );
 }
 
-export default Register;
+export default Register;git
