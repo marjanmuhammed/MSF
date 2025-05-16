@@ -35,14 +35,21 @@ function Home() {
             “ഐക്യം… അതിജീവനം… അഭിമാനം…”
           </p>
           <div className="relative group">
-  <p className="text-gray-700 font-[Noto_Sans_Malayalam] mt-1 transition-all duration-300 group-hover:text-green-700 group-hover:scale-105">
-    msf മയ്യിൽ പഞ്ചായത്ത്‌ സമ്മേളനം
-    <span className="ml-2 inline-block transition-transform duration-500 group-hover:rotate-45">🎉</span>
-  </p>
-  <p className="text-gray-600 font-[Noto_Sans_Malayalam] transition-all duration-500 hover:text-amber-600 hover:font-bold">
-    2025 മെയ് 17,18
-   
-  </p>
+          <p className="text-gray-700 font-[Noto_Sans_Malayalam] mt-1 transition-all duration-300
+  group-hover:text-green-700 group-focus-within:text-green-700
+  group-hover:scale-105 group-focus-within:scale-105
+  ">
+  msf മയ്യിൽ പഞ്ചായത്ത്‌ സമ്മേളനം
+  <span className="ml-2 inline-block transition-transform duration-500
+    group-hover:rotate-45 group-focus-within:rotate-45
+  ">🎉</span>
+</p>
+<p className="text-gray-600 font-[Noto_Sans_Malayalam] transition-all duration-500
+  hover:text-amber-600 hover:font-bold focus:text-amber-600 focus:font-bold
+">
+  2025 മെയ് 17,18
+</p>
+
   <div className="absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-green-400 to-blue-500 w-0 group-hover:w-full transition-all duration-500"></div>
 </div>
         </div>

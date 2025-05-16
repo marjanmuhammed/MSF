@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ReactCrop from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+import 'cropperjs/dist/cropper.css';
 
 function Register() {
   const [formData, setFormData] = useState({ name: "", image: "" });
@@ -9,6 +12,11 @@ function Register() {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [combinedImage, setCombinedImage] = useState(null);
   const [showSourceOptions, setShowSourceOptions] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [crop, setCrop] = useState();
+  const [completedCrop, setCompletedCrop] = useState(null);
+  const [originalImage, setOriginalImage] = useState(null);
+  const imgRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const MSF_LOGO_URL = "https://media-hosting.imagekit.io/2e9b026922d84071/ca2dc57d-8705-4275-9d8f-6f0e3660de78.jpeg?Expires=1841978130&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=HsBsvslchOYpSO2ZSHXjDGbgLs0cC6c~NywowSg37QRgZ9Ri73P2091~a4FaWmuFXH5y7c-u78MvF-NoTLn6PtbY7URtvYoNkzYi1MgH6dgI0MIMaUmmbLeI06q3wn93P2hu3bhVTh1kFVBwOq9hJJ1y7IdM7jPv-BqfjngKRlWrOmtMVCQ8PocGW4Q5pfjXzJaffz~eWeJZ2Dp5Ml0A62dpCdmLdpoRvfP5m~CUK0xarKm3ubz1hJsoheF8bGhM9MNUFcTczL5hu~OtfaI4i5KXs73j9qCN4fp5xI7Q1TqkfucYFqwF~xu2EAxQyjBwZC9~AOnOmtABT9sCfyoRFw__";
@@ -42,7 +50,7 @@ function Register() {
           const userImgWidth = 600;
           const userImgHeight = 670;
 
-          const x = canvas.width / 2 - userImgWidth / 2 + 0;
+          const x = canvas.width / 2 - userImgWidth / 2;
           const y = canvas.height / 2 - userImgHeight / 2 - 300;
 
           function roundRect(ctx, x, y, width, height, radius) {
@@ -63,21 +71,16 @@ function Register() {
           const radius = 60;
           roundRect(ctx, x, y, userImgWidth, userImgHeight, radius);
           ctx.clip();
-
           ctx.drawImage(userImg, x, y, userImgWidth, userImgHeight);
           ctx.restore();
 
-          // Increased font size to 60px for bigger text
-          ctx.font = 'bold 60px Arial';
+          ctx.font = '600 60px "Segoe UI", Arial, sans-serif';
           ctx.fillStyle = '#000000';
           ctx.textAlign = 'center';
-
-          // Add glow effect with shadow before filling text
-          ctx.shadowColor = 'rgba(243, 156, 18, 0.8)'; // orange glow
+          ctx.shadowColor = 'rgba(243, 156, 18, 0.8)';
           ctx.shadowBlur = 10;
           ctx.shadowOffsetX = 0;
           ctx.shadowOffsetY = 0;
-
           ctx.fillText(formData.name, x + userImgWidth / 2, y + userImgHeight + 70);
 
           const combined = canvas.toDataURL('image/jpeg');
@@ -107,17 +110,16 @@ function Register() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.ref = fileInputRef;
 
     if (sourceType === 'camera') {
       input.capture = 'environment';
     }
 
-    input.onchange = (e) => handleImage(e);
+    input.onchange = (e) => handleImageUpload(e);
     input.click();
   };
 
-  const handleImage = async (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -131,31 +133,85 @@ function Register() {
       return;
     }
 
-    setIsUploading(true);
-
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      const imageData = reader.result;
-      setFormData({ ...formData, image: imageData });
-      setUploadedImage(imageData);
-
-      try {
-        const combined = await combineImages(imageData);
-        setCombinedImage(combined);
-      } catch (error) {
-        console.error("Error combining images:", error);
-        toast.error("Error processing image");
-        setCombinedImage(imageData);
-      }
-
-      setIsUploading(false);
-      toast.success("Image uploaded successfully");
-    };
-    reader.onerror = () => {
-      setIsUploading(false);
-      toast.error("Error reading file");
+    reader.onload = (event) => {
+      setOriginalImage(event.target.result);
+      setShowCropModal(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const onImageLoad = (img) => {
+    imgRef.current = img;
+    const size = Math.min(img.width, img.height) * 0.8;
+    const x = (img.width - size) / 2;
+    const y = (img.height - size) / 2;
+    const initialCrop = {
+      unit: 'px',
+      width: size,
+      height: size,
+      x,
+      y
+    };
+    setCrop(initialCrop);
+    setCompletedCrop(initialCrop);
+  };
+
+  const getCroppedImg = () => {
+    if (
+      !completedCrop ||
+      !imgRef.current ||
+      typeof completedCrop.width !== 'number' ||
+      typeof completedCrop.height !== 'number'
+    ) {
+      return;
+    }
+
+    const image = imgRef.current;
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = completedCrop.width;
+    canvas.height = completedCrop.height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.drawImage(
+      image,
+      completedCrop.x * scaleX,
+      completedCrop.y * scaleY,
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
+      0,
+      0,
+      completedCrop.width,
+      completedCrop.height
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      }, 'image/jpeg', 0.9);
+    });
+  };
+
+  const handleCropComplete = async () => {
+    setIsUploading(true);
+    try {
+      const croppedImage = await getCroppedImg();
+      setFormData({ ...formData, image: croppedImage });
+      setUploadedImage(croppedImage);
+      const combined = await combineImages(croppedImage);
+      setCombinedImage(combined);
+      toast.success("Image cropped and uploaded successfully");
+    } catch (error) {
+      console.error("Error cropping image:", error);
+      toast.error("Error processing image");
+    } finally {
+      setIsUploading(false);
+      setShowCropModal(false);
+    }
   };
 
   const handleDownload = () => {
@@ -191,20 +247,9 @@ function Register() {
         <h1 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-green-800`}>
           MSF MAYYIL PANCHAYATH
         </h1>
-
-        {/* Bling effect on Registration Form using Tailwind classes */}
-        <h2
-  className={`
-    ${isMobile ? 'text-md' : 'text-xl'} font-extrabold mt-1 
-    animate-blinkText
-  `}
->
-  Registration Form
-</h2>
-
-
-
-
+        <h2 className={`${isMobile ? 'text-md' : 'text-xl'} font-extrabold mt-1 animate-blinkText`}>
+          Registration Form
+        </h2>
       </div>
 
       {uploadedImage && (
@@ -283,6 +328,49 @@ function Register() {
                   className="w-full py-2 bg-red-500 text-white rounded hover:bg-red-600"
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showCropModal && originalImage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-4 rounded-lg max-w-md w-full" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+        
+              <div className="mb-4">
+                <ReactCrop
+                  crop={crop}
+                  onChange={c => setCrop(c)}
+                  onComplete={c => setCompletedCrop(c)}
+                  aspect={1}
+                  minWidth={200}
+                  minHeight={200}
+                >
+                  <img
+                    ref={imgRef}
+                    src={originalImage}
+                    onLoad={(e) => onImageLoad(e.currentTarget)}
+                    alt="Crop preview"
+                    style={{ maxWidth: '100%' }}
+                  />
+                </ReactCrop>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCropModal(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCropComplete}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  disabled={isUploading}
+                >
+                  {isUploading ? 'Processing...' : 'Apply Crop'}
                 </button>
               </div>
             </div>
