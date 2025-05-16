@@ -3,6 +3,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import 'cropperjs/dist/cropper.css';
 
 function Register() {
   const [formData, setFormData] = useState({ name: "", image: "" });
@@ -48,6 +49,7 @@ function Register() {
         userImg.onload = () => {
           const userImgWidth = 600;
           const userImgHeight = 670;
+
           const x = canvas.width / 2 - userImgWidth / 2;
           const y = canvas.height / 2 - userImgHeight / 2 - 300;
 
@@ -154,7 +156,6 @@ function Register() {
     setCrop(initialCrop);
     setCompletedCrop(initialCrop);
   };
-
   const getCroppedImg = () => {
     if (
       !completedCrop ||
@@ -164,7 +165,7 @@ function Register() {
     ) {
       return;
     }
-
+  
     const image = imgRef.current;
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
@@ -172,7 +173,7 @@ function Register() {
     canvas.width = completedCrop.width;
     canvas.height = completedCrop.height;
     const ctx = canvas.getContext('2d');
-
+  
     ctx.drawImage(
       image,
       completedCrop.x * scaleX,
@@ -184,15 +185,77 @@ function Register() {
       completedCrop.width,
       completedCrop.height
     );
-
+  
+    // Function to trim white background from canvas
+    function trimCanvasWhiteBackground(cnv, ctx) {
+      const width = cnv.width;
+      const height = cnv.height;
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const pixels = imgData.data;
+  
+      let top = null,
+        bottom = null,
+        left = null,
+        right = null;
+  
+      // Tolerance for "white" detection (0=exact white, higher to allow near-white)
+      const tolerance = 20;
+  
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          const r = pixels[idx];
+          const g = pixels[idx + 1];
+          const b = pixels[idx + 2];
+          const a = pixels[idx + 3];
+  
+          // Check if pixel is NOT white (or transparent)
+          if (
+            a > 0 &&
+            !(r > 255 - tolerance && g > 255 - tolerance && b > 255 - tolerance)
+          ) {
+            if (top === null) top = y;
+            bottom = y;
+            if (left === null || x < left) left = x;
+            if (right === null || x > right) right = x;
+          }
+        }
+      }
+  
+      if (top === null || bottom === null || left === null || right === null) {
+        // No non-white pixels found — return original
+        return cnv;
+      }
+  
+      const trimmedWidth = right - left + 1;
+      const trimmedHeight = bottom - top + 1;
+  
+      const trimmedCanvas = document.createElement('canvas');
+      trimmedCanvas.width = trimmedWidth;
+      trimmedCanvas.height = trimmedHeight;
+      const trimmedCtx = trimmedCanvas.getContext('2d');
+  
+      // Copy trimmed pixels
+      trimmedCtx.putImageData(
+        ctx.getImageData(left, top, trimmedWidth, trimmedHeight),
+        0,
+        0
+      );
+  
+      return trimmedCanvas;
+    }
+  
+    const trimmedCanvas = trimCanvasWhiteBackground(canvas, ctx);
+  
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
+      trimmedCanvas.toBlob((blob) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(blob);
       }, 'image/jpeg', 0.9);
     });
   };
+  
 
   const handleCropComplete = async () => {
     setIsUploading(true);
@@ -218,13 +281,14 @@ function Register() {
       return;
     }
 
-    if (!combinedImage) {
-      toast.error("Please upload and crop your image first");
+    if (!uploadedImage) {
+      toast.error("Please upload an image first");
       return;
     }
 
+    const imageToDownload = combinedImage || uploadedImage;
     const link = document.createElement('a');
-    link.href = combinedImage;
+    link.href = imageToDownload;
     link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
 
     document.body.appendChild(link);
@@ -333,9 +397,9 @@ function Register() {
 
         {showCropModal && originalImage && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-4 rounded-lg max-w-md w-full" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-              <h3 className="text-lg font-semibold mb-4 text-center">Crop Your Image</h3>
-              <div className="mb-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+            <div className="bg-white p-4 rounded-lg max-w-md w-full" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+        
+              <div className="mb-4">
                 <ReactCrop
                   crop={crop}
                   onChange={c => setCrop(c)}
@@ -343,14 +407,13 @@ function Register() {
                   aspect={1}
                   minWidth={200}
                   minHeight={200}
-                  style={{ maxWidth: '100%' }}
                 >
                   <img
                     ref={imgRef}
                     src={originalImage}
                     onLoad={(e) => onImageLoad(e.currentTarget)}
                     alt="Crop preview"
-                    style={{ maxWidth: '100%', maxHeight: '60vh' }}
+                    style={{ maxWidth: '100%' }}
                   />
                 </ReactCrop>
               </div>
@@ -368,7 +431,7 @@ function Register() {
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   disabled={isUploading}
                 >
-                  {isUploading ? 'Processing...' : 'Done'}
+                  {isUploading ? 'Processing...' : 'Apply Crop'}
                 </button>
               </div>
             </div>
@@ -378,9 +441,9 @@ function Register() {
         <button
           type="button"
           onClick={handleDownload}
-          disabled={isUploading || !combinedImage || !formData.name.trim()}
+          disabled={isUploading || !uploadedImage || !formData.name.trim()}
           className={`w-full py-3 rounded-lg text-white font-medium ${
-            (isUploading || !combinedImage || !formData.name.trim()) 
+            (isUploading || !uploadedImage || !formData.name.trim()) 
               ? 'bg-blue-400 cursor-not-allowed' 
               : 'bg-blue-600 hover:bg-blue-700'
           } transition-colors`}
