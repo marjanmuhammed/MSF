@@ -214,38 +214,20 @@ function Register() {
     }
   };
   const handleDownload = async () => {
-    if (!formData.name.trim()) {
-      toast.error("Please enter your name");
-      return;
-    }
-  
     if (!uploadedImage) {
-      toast.error("Please upload an image first");
+      alert("Please upload an image first.");
       return;
     }
   
-    try {
-      toast.info("Generating final image...");
-      const newCombined = await combineImages(uploadedImage);
+    // Regenerate combined image freshly
+    const finalImage = await combineImages(uploadedImage);
   
-      // Create download link
-      const link = document.createElement('a');
-      link.href = newCombined;
-      link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
-  
-      document.body.appendChild(link);
-      link.click();
-  
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-      }, 100);
-    } catch (error) {
-      console.error("Failed to generate final image:", error);
-      toast.error("Failed to generate final image");
-    }
+    const link = document.createElement("a");
+    link.download = `${formData.name || "registration"}.png`;
+    link.href = finalImage;  // <-- Use the string directly, no toDataURL()
+    link.click();
   };
-
+  
   return (
     <div className={`w-full max-w-md mx-auto ${isMobile ? 'p-3' : 'p-6'} bg-white rounded-lg shadow-lg mt-6 border border-gray-300`}>
       <ToastContainer position="top-center" autoClose={3000} />
