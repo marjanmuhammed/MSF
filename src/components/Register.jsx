@@ -15,10 +15,11 @@ function Register() {
   const [crop, setCrop] = useState();
   const [completedCrop, setCompletedCrop] = useState(null);
   const [originalImage, setOriginalImage] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const imgRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const MSF_LOGO_URL = "https://media-hosting.imagekit.io/2e9b026922d84071/ca2dc57d-8705-4275-9d8f-6f0e3660de78.jpeg?Expires=1841978130&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=HsBsvslchOYpSO2ZSHXjDGbgLs0cC6c~NywowSg37QRgZ9Ri73P2091~a4FaWmuFXH5y7c-u78MvF-NoTLn6PtbY7URtvYoNkzYi1MgH6dgI0MIMaUmmbLeI06q3wn93P2hu3bhVTh1kFVBwOq9hJJ1y7IdM7jPv-BqfjngKRlWrOmtMVCQ8PocGW4Q5pfjXzJaffz~eWeJZ2Dp5Ml0A62dpCdmLdpoRvfP5m~CUK0xarKm3ubz1hJsoheF8bGhM9MNUFcTczL5hu~OtfaI4i5KXs73j9qCN4fp5xI7Q1TqkfucYFqwF~xu2EAxQyjBwZC9~AOnOmtABT9sCfyoRFw__";
+  const MSF_LOGO_URL = "https://media-hosting.imagekit.io/2e9b026922d84071/ca2dc57d-8705-4275-9d8f-6f0e3660de78.jpeg";
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
@@ -220,35 +221,57 @@ function Register() {
       return;
     }
 
+    setIsDownloading(true);
+    
     try {
-      // Fetch the image data
-      const response = await fetch(combinedImage);
-      const blob = await response.blob();
-      
-      // Create object URL
-      const url = window.URL.createObjectURL(blob);
-      
-      // Create temporary anchor
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
-      
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      setTimeout(() => {
+      // For iOS devices
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        // Create a temporary link and click it
+        const link = document.createElement('a');
+        link.href = combinedImage;
+        link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
         document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      }, 100);
-      
+        
+        // Fallback - open in new tab after delay
+        setTimeout(() => {
+          window.open(combinedImage, '_blank');
+        }, 500);
+      } 
+      // For Android and other devices
+      else {
+        // First try standard download
+        const response = await fetch(combinedImage);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        }, 100);
+        
+        // Fallback for Android
+        setTimeout(() => {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = combinedImage;
+          document.body.appendChild(iframe);
+          setTimeout(() => document.body.removeChild(iframe), 1000);
+        }, 200);
+      }
     } catch (error) {
       console.error('Download failed:', error);
-      toast.error('Download failed. Opening image in new tab...');
-      
-      // Fallback - open in new tab
+      toast.error('Opening image in new tab...');
       window.open(combinedImage, '_blank');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -398,11 +421,11 @@ function Register() {
               : 'bg-blue-600 hover:bg-blue-700'
           } transition-colors`}
         >
-          {isUploading ? "Processing..." : "Download Image"}
+          {isDownloading ? "Preparing Download..." : "Download Image"}
         </button>
       </form>
     </div>
   );
 }
 
-export default Register;
+export default Register;git
