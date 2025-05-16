@@ -224,32 +224,28 @@ function Register() {
       return;
     }
   
-    let imageToDownload = combinedImage;
-  
-    // Always regenerate to ensure latest name/logo is used
     try {
-      toast.info("Preparing your image...");
+      toast.info("Generating final image...");
       const newCombined = await combineImages(uploadedImage);
-      imageToDownload = newCombined; // ✅ use directly
+  
+      // Create download link
+      const link = document.createElement('a');
+      link.href = newCombined;
+      link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
+  
+      document.body.appendChild(link);
+      link.click();
+  
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      }, 100);
     } catch (error) {
-      console.error("Failed to combine image:", error);
+      console.error("Failed to generate final image:", error);
       toast.error("Failed to generate final image");
-      return;
     }
-  
-    const link = document.createElement('a');
-    link.href = imageToDownload;
-    link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
-  
-    document.body.appendChild(link);
-    link.click();
-  
-    setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(link.href);
-    }, 100);
   };
-  
+
   return (
     <div className={`w-full max-w-md mx-auto ${isMobile ? 'p-3' : 'p-6'} bg-white rounded-lg shadow-lg mt-6 border border-gray-300`}>
       <ToastContainer position="top-center" autoClose={3000} />
