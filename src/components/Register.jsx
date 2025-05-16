@@ -3,7 +3,6 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import 'cropperjs/dist/cropper.css';
 
 function Register() {
   const [formData, setFormData] = useState({ name: "", image: "" });
@@ -166,7 +165,7 @@ function Register() {
     ) {
       return;
     }
-
+  
     const image = imgRef.current;
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
@@ -174,7 +173,7 @@ function Register() {
     canvas.width = completedCrop.width;
     canvas.height = completedCrop.height;
     const ctx = canvas.getContext('2d');
-
+  
     ctx.drawImage(
       image,
       completedCrop.x * scaleX,
@@ -186,7 +185,7 @@ function Register() {
       completedCrop.width,
       completedCrop.height
     );
-
+  
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         const reader = new FileReader();
@@ -336,9 +335,9 @@ function Register() {
 
         {showCropModal && originalImage && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-4 rounded-lg max-w-md w-full" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-        
-              <div className="mb-4">
+            <div className="bg-white p-4 rounded-lg max-w-md w-full" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+              <h3 className="text-lg font-semibold mb-4 text-center">Crop Your Image</h3>
+              <div className="mb-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                 <ReactCrop
                   crop={crop}
                   onChange={c => setCrop(c)}
@@ -346,13 +345,14 @@ function Register() {
                   aspect={1}
                   minWidth={200}
                   minHeight={200}
+                  style={{ maxWidth: '100%' }}
                 >
                   <img
                     ref={imgRef}
                     src={originalImage}
                     onLoad={(e) => onImageLoad(e.currentTarget)}
                     alt="Crop preview"
-                    style={{ maxWidth: '100%' }}
+                    style={{ maxWidth: '100%', maxHeight: '60vh' }}
                   />
                 </ReactCrop>
               </div>
@@ -370,7 +370,7 @@ function Register() {
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   disabled={isUploading}
                 >
-                  {isUploading ? 'Processing...' : 'Apply Crop'}
+                  {isUploading ? 'Processing...' : 'Done'}
                 </button>
               </div>
             </div>
