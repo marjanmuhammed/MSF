@@ -3,6 +3,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import 'cropperjs/dist/cropper.css';
+
 
 function Register() {
   const [formData, setFormData] = useState({ name: "", image: "" });
@@ -15,11 +17,10 @@ function Register() {
   const [crop, setCrop] = useState();
   const [completedCrop, setCompletedCrop] = useState(null);
   const [originalImage, setOriginalImage] = useState(null);
-  const [isDownloading, setIsDownloading] = useState(false);
   const imgRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const MSF_LOGO_URL = "https://media-hosting.imagekit.io/2e9b026922d84071/ca2dc57d-8705-4275-9d8f-6f0e3660de78.jpeg";
+  const MSF_LOGO_URL = "https://media-hosting.imagekit.io/2e9b026922d84071/ca2dc57d-8705-4275-9d8f-6f0e3660de78.jpeg?Expires=1841978130&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=HsBsvslchOYpSO2ZSHXjDGbgLs0cC6c~NywowSg37QRgZ9Ri73P2091~a4FaWmuFXH5y7c-u78MvF-NoTLn6PtbY7URtvYoNkzYi1MgH6dgI0MIMaUmmbLeI06q3wn93P2hu3bhVTh1kFVBwOq9hJJ1y7IdM7jPv-BqfjngKRlWrOmtMVCQ8PocGW4Q5pfjXzJaffz~eWeJZ2Dp5Ml0A62dpCdmLdpoRvfP5m~CUK0xarKm3ubz1hJsoheF8bGhM9MNUFcTczL5hu~OtfaI4i5KXs73j9qCN4fp5xI7Q1TqkfucYFqwF~xu2EAxQyjBwZC9~AOnOmtABT9sCfyoRFw__";
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
@@ -146,6 +147,7 @@ function Register() {
 
   const onImageLoad = (img) => {
     imgRef.current = img;
+    // Set initial crop to center square
     const size = Math.min(img.width, img.height) * 0.8;
     const x = (img.width - size) / 2;
     const y = (img.height - size) / 2;
@@ -160,7 +162,9 @@ function Register() {
   };
 
   const getCroppedImg = () => {
-    if (!completedCrop || !imgRef.current) return;
+    if (!completedCrop || !imgRef.current) {
+      return;
+    }
 
     const image = imgRef.current;
     const canvas = document.createElement('canvas');
@@ -200,7 +204,7 @@ function Register() {
 
       const combined = await combineImages(croppedImage);
       setCombinedImage(combined);
-      toast.success("Image processed successfully");
+      toast.success("Image cropped and uploaded successfully");
     } catch (error) {
       console.error("Error cropping image:", error);
       toast.error("Error processing image");
@@ -209,71 +213,46 @@ function Register() {
       setShowCropModal(false);
     }
   };
-
   const handleDownload = async () => {
     if (!formData.name.trim()) {
       toast.error("Please enter your name");
       return;
     }
-
-    if (!combinedImage) {
-      toast.error("Please upload and process an image first");
+  
+    if (!uploadedImage) {
+      toast.error("Please upload an image first");
       return;
     }
-
-    setIsDownloading(true);
-    
-    try {
-      // For iOS devices
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        // Create a temporary link and click it
-        const link = document.createElement('a');
-        link.href = combinedImage;
-        link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Fallback - open in new tab after delay
-        setTimeout(() => {
-          window.open(combinedImage, '_blank');
-        }, 500);
-      } 
-      // For Android and other devices
-      else {
-        // First try standard download
-        const response = await fetch(combinedImage);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        
-        // Cleanup
-        setTimeout(() => {
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-        }, 100);
-        
-        // Fallback for Android
-        setTimeout(() => {
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = combinedImage;
-          document.body.appendChild(iframe);
-          setTimeout(() => document.body.removeChild(iframe), 1000);
-        }, 200);
+  
+    let imageToDownload = combinedImage;
+  
+    // Regenerate combined image if not yet available
+    if (!combinedImage) {
+      try {
+        toast.info("Generating final image...");
+        const newCombined = await combineImages(uploadedImage);
+        setCombinedImage(newCombined);
+        imageToDownload = newCombined;
+      } catch (error) {
+        console.error("Failed to combine image:", error);
+        toast.error("Failed to generate final image");
+        return;
       }
-    } catch (error) {
-      console.error('Download failed:', error);
-      toast.error('Opening image in new tab...');
-      window.open(combinedImage, '_blank');
-    } finally {
-      setIsDownloading(false);
     }
+  
+    const link = document.createElement('a');
+    link.href = imageToDownload;
+    link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
+  
+    document.body.appendChild(link);
+    link.click();
+  
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(link.href);
+    }, 100);
   };
+  
 
   return (
     <div className={`w-full max-w-md mx-auto ${isMobile ? 'p-3' : 'p-6'} bg-white rounded-lg shadow-lg mt-6 border border-gray-300`}>
@@ -288,16 +267,16 @@ function Register() {
         </h2>
       </div>
 
-      {combinedImage && (
+      {uploadedImage && (
         <div className="mb-4 flex flex-col items-center">
           <div className="flex justify-center">
             <img 
-              src={combinedImage}
+              src={combinedImage || uploadedImage}
               alt="Preview"
               className={`${isMobile ? 'h-32 w-32' : 'h-48 w-48'} object-cover border-4 border-green-500 rounded-md`} 
             />
           </div>
-          <p className="text-sm text-green-600 mt-2">Image processed ✓</p>
+          <p className="text-sm text-green-600 mt-2">Image selected ✓</p>
         </div>
       )}
 
@@ -414,14 +393,14 @@ function Register() {
         <button
           type="button"
           onClick={handleDownload}
-          disabled={isUploading || !combinedImage || !formData.name.trim()}
+          disabled={isUploading || !uploadedImage || !formData.name.trim()}
           className={`w-full py-3 rounded-lg text-white font-medium ${
-            (isUploading || !combinedImage || !formData.name.trim()) 
+            (isUploading || !uploadedImage || !formData.name.trim()) 
               ? 'bg-blue-400 cursor-not-allowed' 
               : 'bg-blue-600 hover:bg-blue-700'
           } transition-colors`}
         >
-          {isDownloading ? "Preparing Download..." : "Download Image"}
+          {isUploading ? "Processing..." : "Download Image"}
         </button>
       </form>
     </div>
