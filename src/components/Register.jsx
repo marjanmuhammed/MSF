@@ -3,7 +3,6 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import 'cropperjs/dist/cropper.css';
 
 function Register() {
   const [formData, setFormData] = useState({ name: "", image: "" });
@@ -146,7 +145,6 @@ function Register() {
 
   const onImageLoad = (img) => {
     imgRef.current = img;
-    // Set initial crop to center square
     const size = Math.min(img.width, img.height) * 0.8;
     const x = (img.width - size) / 2;
     const y = (img.height - size) / 2;
@@ -161,9 +159,7 @@ function Register() {
   };
 
   const getCroppedImg = () => {
-    if (!completedCrop || !imgRef.current) {
-      return;
-    }
+    if (!completedCrop || !imgRef.current) return;
 
     const image = imgRef.current;
     const canvas = document.createElement('canvas');
@@ -213,7 +209,7 @@ function Register() {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!formData.name.trim()) {
       toast.error("Please enter your name");
       return;
@@ -224,17 +220,36 @@ function Register() {
       return;
     }
 
-    const link = document.createElement('a');
-    link.href = combinedImage;
-    link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
-
-    document.body.appendChild(link);
-    link.click();
-
-    setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(link.href);
-    }, 100);
+    try {
+      // Fetch the image data
+      const response = await fetch(combinedImage);
+      const blob = await response.blob();
+      
+      // Create object URL
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create temporary anchor
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Download failed. Opening image in new tab...');
+      
+      // Fallback - open in new tab
+      window.open(combinedImage, '_blank');
+    }
   };
 
   return (
