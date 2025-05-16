@@ -11,7 +11,7 @@ function Register() {
   const [showSourceOptions, setShowSourceOptions] = useState(false);
   const fileInputRef = useRef(null);
 
-  const MSF_LOGO_URL = "https://media-hosting.imagekit.io/6c5eba5d0cd94d13/5948e25f-7f67-4eb5-8889-ccff3e0211a7-Photoroom%20(1).png?Expires=1841751769&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=tD6yF3S6g1zwHAM3L9rzGtN0T9QOuVqMSneQoJd1KxxRpIXvmEzhtfbkwRBpNhO125SPhr2x6BBaD7-~RlH8n3O7t2je79Zu8B7fT5IrcJyolE3fbLruNbWNQ5ZM0By1WsBqnCb7uuhHRBcoukWSKbkNV60PXGjxtIvqztXNwDNTTmLh2ylHrLsG3t1fj9cra9psXbcrH4nHq0qCjrQWlUtBDYHOh8l11Z4yKLo3q6PpnbefneEjVyUocJuu7Gjbodi7YGmUN6pQSh6LL2R2mLkT9hw9uQuDqn9ysih37sMTH5q6yfH96CcDlZSnO4Mbv48DHrB2yEGlcqG51rd37w__";
+  const MSF_LOGO_URL = "https://media-hosting.imagekit.io/2e9b026922d84071/ca2dc57d-8705-4275-9d8f-6f0e3660de78.jpeg?Expires=1841978130&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=HsBsvslchOYpSO2ZSHXjDGbgLs0cC6c~NywowSg37QRgZ9Ri73P2091~a4FaWmuFXH5y7c-u78MvF-NoTLn6PtbY7URtvYoNkzYi1MgH6dgI0MIMaUmmbLeI06q3wn93P2hu3bhVTh1kFVBwOq9hJJ1y7IdM7jPv-BqfjngKRlWrOmtMVCQ8PocGW4Q5pfjXzJaffz~eWeJZ2Dp5Ml0A62dpCdmLdpoRvfP5m~CUK0xarKm3ubz1hJsoheF8bGhM9MNUFcTczL5hu~OtfaI4i5KXs73j9qCN4fp5xI7Q1TqkfucYFqwF~xu2EAxQyjBwZC9~AOnOmtABT9sCfyoRFw__";
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
@@ -39,48 +39,80 @@ function Register() {
         userImg.src = userImage;
 
         userImg.onload = () => {
-          const userImgSize = 260;
-          const x = canvas.width / 2 - userImgSize / 2 - 220;
-          const y = canvas.height / 2 - userImgSize / 2;
+          const userImgWidth = 600;
+          const userImgHeight = 670;
+
+          const x = canvas.width / 2 - userImgWidth / 2 + 0;
+          const y = canvas.height / 2 - userImgHeight / 2 - 300;
+
+          function roundRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+          }
 
           ctx.save();
-          ctx.beginPath();
-          ctx.arc(x + userImgSize / 2, y + userImgSize / 2, userImgSize / 2, 0, Math.PI * 2);
-          ctx.closePath();
+          const radius = 60;
+          roundRect(ctx, x, y, userImgWidth, userImgHeight, radius);
           ctx.clip();
 
-          ctx.drawImage(userImg, x, y, userImgSize, userImgSize);
+          ctx.drawImage(userImg, x, y, userImgWidth, userImgHeight);
           ctx.restore();
 
-          ctx.font = 'bold 26px Arial';
+          // Increased font size to 60px for bigger text
+          ctx.font = 'bold 60px Arial';
           ctx.fillStyle = '#000000';
           ctx.textAlign = 'center';
-          ctx.fillText(formData.name, x + userImgSize / 2, y + userImgSize + 60);
+
+          // Add glow effect with shadow before filling text
+          ctx.shadowColor = 'rgba(243, 156, 18, 0.8)'; // orange glow
+          ctx.shadowBlur = 10;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+
+          ctx.fillText(formData.name, x + userImgWidth / 2, y + userImgHeight + 70);
 
           const combined = canvas.toDataURL('image/jpeg');
           resolve(combined);
         };
+
+        userImg.onerror = () => {
+          toast.error("Failed to load user image");
+          resolve(userImage);
+        };
+      };
+
+      msfLogo.onerror = () => {
+        toast.error("Failed to load MSF logo image");
+        resolve(userImage);
       };
     });
   };
 
   const handleImageSelection = (sourceType) => {
     setShowSourceOptions(false);
-    
-    // Clear previous file input if any
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    
+
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.ref = fileInputRef;
-    
+
     if (sourceType === 'camera') {
-      input.capture = 'environment'; // This will open camera
+      input.capture = 'environment';
     }
-    
+
     input.onchange = (e) => handleImage(e);
     input.click();
   };
@@ -141,12 +173,10 @@ function Register() {
     const link = document.createElement('a');
     link.href = imageToDownload;
     link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
-    
-    // This is needed for Firefox
+
     document.body.appendChild(link);
     link.click();
-    
-    // Cleanup
+
     setTimeout(() => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(link.href);
@@ -158,8 +188,23 @@ function Register() {
       <ToastContainer position="top-center" autoClose={3000} />
 
       <div className="text-center mb-6">
-        <h1 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-green-800`}>MSF MAYYIL PANCHAYATH</h1>
-        <h2 className={`${isMobile ? 'text-md' : 'text-xl'} font-semibold mt-1`}>Registration Form</h2>
+        <h1 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-green-800`}>
+          MSF MAYYIL PANCHAYATH
+        </h1>
+
+        {/* Bling effect on Registration Form using Tailwind classes */}
+        <h2
+  className={`
+    ${isMobile ? 'text-md' : 'text-xl'} font-extrabold mt-1 
+    animate-blinkText
+  `}
+>
+  Registration Form
+</h2>
+
+
+
+
       </div>
 
       {uploadedImage && (
@@ -168,7 +213,7 @@ function Register() {
             <img 
               src={combinedImage || uploadedImage}
               alt="Preview"
-              className={`${isMobile ? 'h-32 w-32' : 'h-48 w-48'} object-cover rounded-full border-4 border-green-500`} 
+              className={`${isMobile ? 'h-32 w-32' : 'h-48 w-48'} object-cover border-4 border-green-500 rounded-md`} 
             />
           </div>
           <p className="text-sm text-green-600 mt-2">Image selected ✓</p>

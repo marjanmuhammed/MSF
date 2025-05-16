@@ -34,23 +34,35 @@ function Home() {
           <p className="text-green-800 text-lg font-semibold font-[Noto_Sans_Malayalam]">
             “ഐക്യം… അതിജീവനം… അഭിമാനം…”
           </p>
-          <p className="text-gray-700 font-[Noto_Sans_Malayalam] mt-1">
-            msf മയ്യിൽ പഞ്ചായത്ത്‌ സമ്മേളനം
-          </p>
-          <p className="text-gray-600 font-[Noto_Sans_Malayalam]">
-            2025 മെയ് 17,18
-          </p>
+          <div className="relative group">
+  <p className="text-gray-700 font-[Noto_Sans_Malayalam] mt-1 transition-all duration-300 group-hover:text-green-700 group-hover:scale-105">
+    msf മയ്യിൽ പഞ്ചായത്ത്‌ സമ്മേളനം
+    <span className="ml-2 inline-block transition-transform duration-500 group-hover:rotate-45">🎉</span>
+  </p>
+  <p className="text-gray-600 font-[Noto_Sans_Malayalam] transition-all duration-500 hover:text-amber-600 hover:font-bold">
+    2025 മെയ് 17,18
+   
+  </p>
+  <div className="absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-green-400 to-blue-500 w-0 group-hover:w-full transition-all duration-500"></div>
+</div>
         </div>
       </div>
 
       {/* Registration Button */}
-     {/* Registration Button */}
-<div className="mt-6 w-full max-w-xs md:max-w-sm">
+      <div className="mt-8 w-full max-w-[140px] mx-auto">
   <button
     onClick={() => navigate("/register")}
-    className="w-full bg-green-500 hover:bg-green-600 text-white text-base md:text-lg py-2 md:py-3 px-6 md:px-8 rounded-full transition-colors duration-300 shadow-md"
+    className="group w-full flex items-center justify-center bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium text-sm md:text-base py-2.5 px-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95"
   >
-    Registration Form
+    <span className="mr-1">Create</span> {/* Reduced right margin */}
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      className="h-4 w-4 md:h-5 md:w-5 transition-transform duration-300 group-hover:translate-x-1" 
+      viewBox="0 0 20 20" 
+      fill="currentColor"
+    >
+      <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+    </svg>
   </button>
 </div>
 
