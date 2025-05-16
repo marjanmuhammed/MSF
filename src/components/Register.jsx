@@ -5,6 +5,7 @@ import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import 'cropperjs/dist/cropper.css';
 
+
 function Register() {
   const [formData, setFormData] = useState({ name: "", image: "" });
   const [isUploading, setIsUploading] = useState(false);
@@ -50,7 +51,7 @@ function Register() {
           const userImgWidth = 600;
           const userImgHeight = 670;
 
-          const x = canvas.width / 2 - userImgWidth / 2;
+          const x = canvas.width / 2 - userImgWidth / 2 + 0;
           const y = canvas.height / 2 - userImgHeight / 2 - 300;
 
           function roundRect(ctx, x, y, width, height, radius) {
@@ -71,16 +72,18 @@ function Register() {
           const radius = 60;
           roundRect(ctx, x, y, userImgWidth, userImgHeight, radius);
           ctx.clip();
+
           ctx.drawImage(userImg, x, y, userImgWidth, userImgHeight);
           ctx.restore();
 
-          ctx.font = '600 60px "Segoe UI", Arial, sans-serif';
+          ctx.font = 'bold 60px Arial';
           ctx.fillStyle = '#000000';
           ctx.textAlign = 'center';
           ctx.shadowColor = 'rgba(243, 156, 18, 0.8)';
           ctx.shadowBlur = 10;
           ctx.shadowOffsetX = 0;
           ctx.shadowOffsetY = 0;
+
           ctx.fillText(formData.name, x + userImgWidth / 2, y + userImgHeight + 70);
 
           const combined = canvas.toDataURL('image/jpeg');
@@ -110,6 +113,7 @@ function Register() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
+    input.ref = fileInputRef;
 
     if (sourceType === 'camera') {
       input.capture = 'environment';
@@ -143,29 +147,25 @@ function Register() {
 
   const onImageLoad = (img) => {
     imgRef.current = img;
+    // Set initial crop to center square
     const size = Math.min(img.width, img.height) * 0.8;
     const x = (img.width - size) / 2;
     const y = (img.height - size) / 2;
-    const initialCrop = {
+    
+    setCrop({
       unit: 'px',
       width: size,
       height: size,
       x,
       y
-    };
-    setCrop(initialCrop);
-    setCompletedCrop(initialCrop);
+    });
   };
+
   const getCroppedImg = () => {
-    if (
-      !completedCrop ||
-      !imgRef.current ||
-      typeof completedCrop.width !== 'number' ||
-      typeof completedCrop.height !== 'number'
-    ) {
+    if (!completedCrop || !imgRef.current) {
       return;
     }
-  
+
     const image = imgRef.current;
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
@@ -173,7 +173,7 @@ function Register() {
     canvas.width = completedCrop.width;
     canvas.height = completedCrop.height;
     const ctx = canvas.getContext('2d');
-  
+
     ctx.drawImage(
       image,
       completedCrop.x * scaleX,
@@ -185,77 +185,15 @@ function Register() {
       completedCrop.width,
       completedCrop.height
     );
-  
-    // Function to trim white background from canvas
-    function trimCanvasWhiteBackground(cnv, ctx) {
-      const width = cnv.width;
-      const height = cnv.height;
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const pixels = imgData.data;
-  
-      let top = null,
-        bottom = null,
-        left = null,
-        right = null;
-  
-      // Tolerance for "white" detection (0=exact white, higher to allow near-white)
-      const tolerance = 20;
-  
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const idx = (y * width + x) * 4;
-          const r = pixels[idx];
-          const g = pixels[idx + 1];
-          const b = pixels[idx + 2];
-          const a = pixels[idx + 3];
-  
-          // Check if pixel is NOT white (or transparent)
-          if (
-            a > 0 &&
-            !(r > 255 - tolerance && g > 255 - tolerance && b > 255 - tolerance)
-          ) {
-            if (top === null) top = y;
-            bottom = y;
-            if (left === null || x < left) left = x;
-            if (right === null || x > right) right = x;
-          }
-        }
-      }
-  
-      if (top === null || bottom === null || left === null || right === null) {
-        // No non-white pixels found — return original
-        return cnv;
-      }
-  
-      const trimmedWidth = right - left + 1;
-      const trimmedHeight = bottom - top + 1;
-  
-      const trimmedCanvas = document.createElement('canvas');
-      trimmedCanvas.width = trimmedWidth;
-      trimmedCanvas.height = trimmedHeight;
-      const trimmedCtx = trimmedCanvas.getContext('2d');
-  
-      // Copy trimmed pixels
-      trimmedCtx.putImageData(
-        ctx.getImageData(left, top, trimmedWidth, trimmedHeight),
-        0,
-        0
-      );
-  
-      return trimmedCanvas;
-    }
-  
-    const trimmedCanvas = trimCanvasWhiteBackground(canvas, ctx);
-  
+
     return new Promise((resolve) => {
-      trimmedCanvas.toBlob((blob) => {
+      canvas.toBlob((blob) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(blob);
       }, 'image/jpeg', 0.9);
     });
   };
-  
 
   const handleCropComplete = async () => {
     setIsUploading(true);
@@ -263,6 +201,7 @@ function Register() {
       const croppedImage = await getCroppedImg();
       setFormData({ ...formData, image: croppedImage });
       setUploadedImage(croppedImage);
+
       const combined = await combineImages(croppedImage);
       setCombinedImage(combined);
       toast.success("Image cropped and uploaded successfully");
@@ -397,9 +336,9 @@ function Register() {
 
         {showCropModal && originalImage && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-4 rounded-lg max-w-md w-full" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-        
-              <div className="mb-4">
+            <div className="bg-white p-4 rounded-lg max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4">Crop Your Image</h3>
+              <div className="mb-4" style={{ maxHeight: '60vh', overflow: 'auto' }}>
                 <ReactCrop
                   crop={crop}
                   onChange={c => setCrop(c)}
@@ -419,14 +358,12 @@ function Register() {
               </div>
               <div className="flex justify-end space-x-2">
                 <button
-                  type="button"
                   onClick={() => setShowCropModal(false)}
                   className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                 >
                   Cancel
                 </button>
                 <button
-                  type="button"
                   onClick={handleCropComplete}
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   disabled={isUploading}
