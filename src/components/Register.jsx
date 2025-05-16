@@ -5,7 +5,6 @@ import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import 'cropperjs/dist/cropper.css';
 
-
 function Register() {
   const [formData, setFormData] = useState({ name: "", image: "" });
   const [isUploading, setIsUploading] = useState(false);
@@ -204,7 +203,7 @@ function Register() {
 
       const combined = await combineImages(croppedImage);
       setCombinedImage(combined);
-      toast.success("Image cropped and uploaded successfully");
+      toast.success("Image processed successfully");
     } catch (error) {
       console.error("Error cropping image:", error);
       toast.error("Error processing image");
@@ -220,14 +219,13 @@ function Register() {
       return;
     }
 
-    if (!uploadedImage) {
-      toast.error("Please upload an image first");
+    if (!combinedImage) {
+      toast.error("Please upload and process an image first");
       return;
     }
 
-    const imageToDownload = combinedImage || uploadedImage;
     const link = document.createElement('a');
-    link.href = imageToDownload;
+    link.href = combinedImage;
     link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
 
     document.body.appendChild(link);
@@ -252,16 +250,16 @@ function Register() {
         </h2>
       </div>
 
-      {uploadedImage && (
+      {combinedImage && (
         <div className="mb-4 flex flex-col items-center">
           <div className="flex justify-center">
             <img 
-              src={combinedImage || uploadedImage}
+              src={combinedImage}
               alt="Preview"
               className={`${isMobile ? 'h-32 w-32' : 'h-48 w-48'} object-cover border-4 border-green-500 rounded-md`} 
             />
           </div>
-          <p className="text-sm text-green-600 mt-2">Image selected ✓</p>
+          <p className="text-sm text-green-600 mt-2">Image processed ✓</p>
         </div>
       )}
 
@@ -378,9 +376,9 @@ function Register() {
         <button
           type="button"
           onClick={handleDownload}
-          disabled={isUploading || !uploadedImage || !formData.name.trim()}
+          disabled={isUploading || !combinedImage || !formData.name.trim()}
           className={`w-full py-3 rounded-lg text-white font-medium ${
-            (isUploading || !uploadedImage || !formData.name.trim()) 
+            (isUploading || !combinedImage || !formData.name.trim()) 
               ? 'bg-blue-400 cursor-not-allowed' 
               : 'bg-blue-600 hover:bg-blue-700'
           } transition-colors`}
