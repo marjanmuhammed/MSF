@@ -48,7 +48,6 @@ function Register() {
         userImg.onload = () => {
           const userImgWidth = 600;
           const userImgHeight = 670;
-
           const x = canvas.width / 2 - userImgWidth / 2;
           const y = canvas.height / 2 - userImgHeight / 2 - 300;
 
@@ -165,7 +164,7 @@ function Register() {
     ) {
       return;
     }
-  
+
     const image = imgRef.current;
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
@@ -173,7 +172,7 @@ function Register() {
     canvas.width = completedCrop.width;
     canvas.height = completedCrop.height;
     const ctx = canvas.getContext('2d');
-  
+
     ctx.drawImage(
       image,
       completedCrop.x * scaleX,
@@ -185,7 +184,7 @@ function Register() {
       completedCrop.width,
       completedCrop.height
     );
-  
+
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         const reader = new FileReader();
@@ -219,14 +218,13 @@ function Register() {
       return;
     }
 
-    if (!uploadedImage) {
-      toast.error("Please upload an image first");
+    if (!combinedImage) {
+      toast.error("Please upload and crop your image first");
       return;
     }
 
-    const imageToDownload = combinedImage || uploadedImage;
     const link = document.createElement('a');
-    link.href = imageToDownload;
+    link.href = combinedImage;
     link.download = `msf_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
 
     document.body.appendChild(link);
@@ -380,9 +378,9 @@ function Register() {
         <button
           type="button"
           onClick={handleDownload}
-          disabled={isUploading || !uploadedImage || !formData.name.trim()}
+          disabled={isUploading || !combinedImage || !formData.name.trim()}
           className={`w-full py-3 rounded-lg text-white font-medium ${
-            (isUploading || !uploadedImage || !formData.name.trim()) 
+            (isUploading || !combinedImage || !formData.name.trim()) 
               ? 'bg-blue-400 cursor-not-allowed' 
               : 'bg-blue-600 hover:bg-blue-700'
           } transition-colors`}
