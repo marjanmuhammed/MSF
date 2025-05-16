@@ -24,7 +24,7 @@ function Home() {
 
         {/* Main Image */}
         <img
-          src="https://media-hosting.imagekit.io/d998aabf48f94b5e/IMG_5782.JPG?Expires=1841743273&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=USoNcavhlbJumNyemqJCOz-dq0Rt5AYbo30oHLxLeky7IwaW0-sk-PniUTiISFFYEoWUAC99iZDlzX14B8-pj1w9ddM6dXDH-cnn-ecOzVCqUwWOg8ZQmKGeDvhsIKjcNKEYIP4m12b80q25s9w~MU7tM7tF99w5kylWQTAiqjJtlPCpIz5GsFI97hK3-ivEr3CdeP1kKBOnhGSq7YF9ZVIGOybykMdvQE3iDadw5mrYXsE8zcN2bko~Gs7toddFUB3IoDb7K866w78XRDWsiG7ZqX0jFH4cOiUr5r0vJMkpIoC5Ji4osU06WFk8CvdLnec2YuHLjQBGRFMHS9KHBQ__"
+          src="https://i.postimg.cc/JhxnSy10/0-B009824-A82-F-4273-B3-F3-101-FB80-C41-D9.jpg"
           alt="Notice"
           className="w-full h-auto rounded border border-gray-300"
         />
