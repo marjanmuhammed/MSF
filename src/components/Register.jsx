@@ -226,18 +226,15 @@ function Register() {
   
     let imageToDownload = combinedImage;
   
-    // Regenerate combined image if not yet available
-    if (!combinedImage) {
-      try {
-        toast.info("Generating final image...");
-        const newCombined = await combineImages(uploadedImage);
-        setCombinedImage(newCombined);
-        imageToDownload = newCombined;
-      } catch (error) {
-        console.error("Failed to combine image:", error);
-        toast.error("Failed to generate final image");
-        return;
-      }
+    // Always regenerate to ensure latest name/logo is used
+    try {
+      toast.info("Preparing your image...");
+      const newCombined = await combineImages(uploadedImage);
+      imageToDownload = newCombined; // ✅ use directly
+    } catch (error) {
+      console.error("Failed to combine image:", error);
+      toast.error("Failed to generate final image");
+      return;
     }
   
     const link = document.createElement('a');
@@ -253,7 +250,6 @@ function Register() {
     }, 100);
   };
   
-
   return (
     <div className={`w-full max-w-md mx-auto ${isMobile ? 'p-3' : 'p-6'} bg-white rounded-lg shadow-lg mt-6 border border-gray-300`}>
       <ToastContainer position="top-center" autoClose={3000} />
