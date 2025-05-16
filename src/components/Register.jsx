@@ -33,27 +33,30 @@ function Register() {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-
+  
       const msfLogo = new Image();
       msfLogo.crossOrigin = "Anonymous";
       msfLogo.src = MSF_LOGO_URL;
-
+  
       msfLogo.onload = () => {
         canvas.width = msfLogo.width;
         canvas.height = msfLogo.height;
-
+  
         ctx.drawImage(msfLogo, 0, 0);
-
+  
         const userImg = new Image();
+        userImg.crossOrigin = "Anonymous";
         userImg.src = userImage;
-
+  
         userImg.onload = () => {
           const userImgWidth = 600;
           const userImgHeight = 670;
-
-          const x = canvas.width / 2 - userImgWidth / 2 + 0;
-          const y = canvas.height / 2 - userImgHeight / 2 - 300;
-
+  
+          // Center horizontally, shift up by 300px
+          const x = (canvas.width - userImgWidth) / 2;
+          const y = (canvas.height - userImgHeight) / 2 - 300;
+  
+          // Rounded rectangle clipping (keeping as is)
           function roundRect(ctx, x, y, width, height, radius) {
             ctx.beginPath();
             ctx.moveTo(x + radius, y);
@@ -67,15 +70,15 @@ function Register() {
             ctx.quadraticCurveTo(x, y, x + radius, y);
             ctx.closePath();
           }
-
+  
           ctx.save();
           const radius = 60;
           roundRect(ctx, x, y, userImgWidth, userImgHeight, radius);
           ctx.clip();
-
+  
           ctx.drawImage(userImg, x, y, userImgWidth, userImgHeight);
           ctx.restore();
-
+  
           ctx.font = 'bold 60px Arial';
           ctx.fillStyle = '#000000';
           ctx.textAlign = 'center';
@@ -83,25 +86,26 @@ function Register() {
           ctx.shadowBlur = 10;
           ctx.shadowOffsetX = 0;
           ctx.shadowOffsetY = 0;
-
+  
           ctx.fillText(formData.name, x + userImgWidth / 2, y + userImgHeight + 70);
-
+  
           const combined = canvas.toDataURL('image/jpeg');
           resolve(combined);
         };
-
+  
         userImg.onerror = () => {
           toast.error("Failed to load user image");
           resolve(userImage);
         };
       };
-
+  
       msfLogo.onerror = () => {
         toast.error("Failed to load MSF logo image");
         resolve(userImage);
       };
     });
   };
+  
 
   const handleImageSelection = (sourceType) => {
     setShowSourceOptions(false);
